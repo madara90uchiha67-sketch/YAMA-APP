@@ -69,6 +69,7 @@ model Message {
   id             String       @id @default(cuid())
   role           String
   content        String
+  attachments    String?
   createdAt      DateTime     @default(now())
   conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
   conversationId String
@@ -79,6 +80,7 @@ model UsageLog {
   date         String
   messageCount Int      @default(0)
   strategistCount Int    @default(0)
+  attachmentCount Int    @default(0)
   user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   userId       String
 

@@ -27,6 +27,11 @@ Completa cada valor (ver comentarios en el archivo). Necesitas al menos una
 clave de IA (`GEMINI_API_KEY`, `GROQ_API_KEY`, `CEREBRAS_API_KEY`,
 `OPENROUTER_API_KEY` o `MISTRAL_API_KEY`). Para `NEXTAUTH_SECRET` genera uno con:
 
+Para los adjuntos necesitas también `SUPABASE_URL`,
+`SUPABASE_SERVICE_ROLE_KEY`, `NEXT_PUBLIC_SUPABASE_URL` y
+`NEXT_PUBLIC_SUPABASE_ANON_KEY`. La clave `SUPABASE_SERVICE_ROLE_KEY` solo se
+usa en el servidor y nunca debe exponerse al navegador.
+
 ```bash
 openssl rand -base64 32
 ```
@@ -95,6 +100,26 @@ Esta misma versión (que ya es una PWA) se puede envolver más adelante con
 Capacitor para generar un `.apk`/`.aab` (Android) o proyecto Xcode (iOS),
 apuntando a tu dominio de Vercel ya desplegado. Es un paso aparte cuando
 quieras publicarla en las tiendas — avísame cuando llegues ahí.
+
+## 10. Adjuntos en el chat
+
+YAMA AI usa un bucket privado de Supabase Storage llamado
+`yama-attachments`. El navegador sube cada archivo mediante una URL firmada
+de corta duración; el servidor valida la sesión, el tipo, el tamaño y el
+propietario antes de enviarlo a Gemini.
+
+Se aceptan imágenes JPEG, PNG, GIF y WebP, además de PDF y documentos de texto
+como TXT, Markdown, CSV, JSON, HTML y XML. Gemini analiza visualmente las
+imágenes y los PDF; los demás documentos se envían como texto.
+
+| Plan | Archivos por mensaje | Archivos por día | Tamaño máximo por archivo |
+| --- | ---: | ---: | ---: |
+| Free | 1 | 5 | 5 MB |
+| Pro | 5 | 100 | 20 MB |
+
+El bucket se crea como privado. En producción, aplica la migración incluida
+en la base de datos y configura las cuatro variables de Supabase antes de
+probar las subidas.
 
 ---
 

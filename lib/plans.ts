@@ -1,17 +1,23 @@
-// Límites de uso por plan. Ajusta estos números según cuánto quieras
-// gastar en la API de Anthropic por usuario al día.
+// Límites de uso por plan. Los adjuntos se almacenan de forma privada y se
+// envían a Gemini solo durante el análisis solicitado por el usuario.
 export const PLAN_LIMITS = {
   FREE: {
     messagesPerDay: 15,
     maxTokensPerReply: 900,
     memoryNotesLimit: 5,
     strategistPerDay: 2,
+    attachmentsPerMessage: 1,
+    attachmentsPerDay: 5,
+    maxAttachmentBytes: 5 * 1024 * 1024,
   },
   PRO: {
     messagesPerDay: 300,
     maxTokensPerReply: 1800,
     memoryNotesLimit: 200,
     strategistPerDay: 50,
+    attachmentsPerMessage: 5,
+    attachmentsPerDay: 100,
+    maxAttachmentBytes: 20 * 1024 * 1024,
   },
 } as const;
 

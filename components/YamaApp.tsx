@@ -28,7 +28,10 @@ import {
   Crown,
   Flame,
   MessageSquare,
+  Paperclip,
+  FileText,
 } from "lucide-react";
+import { getSupabaseBrowserClient } from "@/lib/supabase-browser";
 
 const sansFont = 'Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
 const serifFont = '"Iowan Old Style", "Apple Garamond", "Baskerville", serif';
@@ -426,11 +429,16 @@ function DailyChallengesView({ onSelect }: any) {
 }
 
 /* ---------------- CHAT ---------------- */
+type ChatAttachment = { path?: string; name: string; mimeType: string; size: number; token?: string };
+type ChatMessage = { role: string; content: string; attachments?: ChatAttachment[] };
+
 function ChatView({ chatMode, plan, initialMessage, onInitialMessageSent, loadConversationId, onConversationLoaded, onOpenHistory }: any) {
-  const [messages, setMessages] = useState<{ role: string; content: string }[]>([]);
+  const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [conversationId, setConversationId] = useState<string | null>(null);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
+  const [uploading, setUploading] = useState(false);
+  const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
   const [error, setError] = useState("");
   const [listening, setListening] = useState(false);
   const [micError, setMicError] = useState("");
@@ -438,6 +446,7 @@ function ChatView({ chatMode, plan, initialMessage, onInitialMessageSent, loadCo
   const scrollRef = useRef<HTMLDivElement>(null);
   const recognitionRef = useRef<any>(null);
   const initialMessageRef = useRef<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => { scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" }); }, [messages, loading]);
 
@@ -449,16 +458,44 @@ function ChatView({ chatMode, plan, initialMessage, onInitialMessageSent, loadCo
     window.speechSynthesis.speak(u);
   }, [speakOn]);
 
-  const send = useCallback(async (text: string) => {
-    const content = text.trim();
-    if (!content || loading) return;
-    setMessages((m) => [...m, { role: "user", content }]);
-    setInput(""); setLoading(true); setError("");
+  const uploadSelectedFiles = useCallback(async (files: File[]) => {
+    if (!files.length) return [] as ChatAttachment[];
+    setUploading(true);
     try {
+      const signRes = await fetch("/api/attachments/sign", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ files: files.map((file) => ({ name: file.name, mimeType: file.type, size: file.size })) }),
+      });
+      const signData = await signRes.json();
+      if (!signRes.ok) throw new Error(signData.error || "No se pudo preparar el archivo.");
+      const supabase = getSupabaseBrowserClient();
+      await Promise.all(signData.uploads.map(async (upload: any) => {
+        const file = files[upload.index];
+        if (!file) throw new Error("No se encontró el archivo seleccionado.");
+        const { error: uploadError } = await supabase.storage.from("yama-attachments").uploadToSignedUrl(upload.path, upload.token, file);
+        if (uploadError) throw new Error(`No se pudo subir ${upload.name}.`);
+      }));
+      return signData.uploads.map((upload: any) => ({ path: upload.path, name: upload.name, mimeType: upload.mimeType, size: upload.size }));
+    } finally {
+      setUploading(false);
+    }
+  }, []);
+
+  const send = useCallback(async (text: string, files: File[] = []) => {
+    const content = text.trim();
+    if ((!content && !files.length) || loading || uploading) return;
+    setInput(""); setLoading(true); setError("");
+    let optimisticMessageAdded = false;
+    try {
+      const attachments = await uploadSelectedFiles(files);
+      setSelectedFiles([]);
+      setMessages((m) => [...m, { role: "user", content: content || "Analiza los archivos adjuntos.", attachments }]);
+      optimisticMessageAdded = true;
       const res = await fetch("/api/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ conversationId, mode: chatMode, content }),
+        body: JSON.stringify({ conversationId, mode: chatMode, content, attachments }),
       });
       const data = await res.json();
       if (!res.ok) {
@@ -469,13 +506,13 @@ function ChatView({ chatMode, plan, initialMessage, onInitialMessageSent, loadCo
       setConversationId(data.conversationId);
       setMessages((m) => [...m, { role: "assistant", content: data.reply }]);
       speak(data.reply);
-    } catch {
-      setError("No pude conectarme. Revisa tu conexión.");
-      setMessages((m) => m.slice(0, -1));
+    } catch (error) {
+      setError(error instanceof Error ? error.message : "No pude conectarme. Revisa tu conexión.");
+      if (optimisticMessageAdded) setMessages((m) => m.slice(0, -1));
     } finally {
       setLoading(false);
     }
-  }, [conversationId, chatMode, loading, speak]);
+  }, [conversationId, chatMode, loading, speak, uploadSelectedFiles, uploading]);
 
   useEffect(() => {
     if (!initialMessage) {
@@ -513,6 +550,29 @@ function ChatView({ chatMode, plan, initialMessage, onInitialMessageSent, loadCo
     })();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [loadConversationId]);
+
+  const onFilesSelected = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(event.target.files || []);
+    event.target.value = "";
+    if (!files.length) return;
+    const maxFiles = plan === "PRO" ? 5 : 1;
+    const maxBytes = plan === "PRO" ? 20 * 1024 * 1024 : 5 * 1024 * 1024;
+    const allowed = new Set(["image/jpeg", "image/png", "image/gif", "image/webp", "application/pdf", "text/plain", "text/markdown", "text/csv", "application/json", "text/html", "application/xml"]);
+    if (files.length > maxFiles || selectedFiles.length + files.length > maxFiles) {
+      setError(`Tu plan permite hasta ${maxFiles} archivo(s) por mensaje.`);
+      return;
+    }
+    if (files.some((file) => !allowed.has(file.type))) {
+      setError("Tipo de archivo no compatible. Usa imágenes, PDF o documentos de texto.");
+      return;
+    }
+    if (files.some((file) => file.size <= 0 || file.size > maxBytes)) {
+      setError(`Cada archivo puede pesar como máximo ${Math.round(maxBytes / 1024 / 1024)} MB en tu plan.`);
+      return;
+    }
+    setError("");
+    setSelectedFiles((current) => [...current, ...files]);
+  };
 
   const toggleListen = async () => {
     setMicError("");
@@ -615,6 +675,16 @@ function ChatView({ chatMode, plan, initialMessage, onInitialMessageSent, loadCo
                 boxShadow: m.role === "assistant" ? "0 2px 10px rgba(0,0,0,0.3)" : "none",
               }}
             >
+              {m.attachments?.length ? (
+                <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginBottom: m.content ? 8 : 0 }}>
+                  {m.attachments.map((attachment) => (
+                    <div key={`${attachment.name}-${attachment.size}`} style={{ display: "flex", alignItems: "center", gap: 6, borderRadius: 9, padding: "6px 8px", background: m.role === "user" ? "rgba(0,0,0,0.12)" : COLORS.metallic, fontSize: 11.5 }}>
+                      {attachment.mimeType.startsWith("image/") ? <Paperclip size={13} /> : <FileText size={13} />}
+                      <span style={{ maxWidth: 180, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{attachment.name}</span>
+                    </div>
+                  ))}
+                </div>
+              ) : null}
               {m.content}
             </div>
           </div>
@@ -631,13 +701,27 @@ function ChatView({ chatMode, plan, initialMessage, onInitialMessageSent, loadCo
         )}
       </div>
 
-      <div style={{ display: "flex", gap: 8, padding: "10px 14px calc(env(safe-area-inset-bottom, 0px) + 10px)", borderTop: `1px solid ${COLORS.line}`, background: COLORS.surface }}>
-        <button onClick={toggleListen} style={{ width: 42, height: 42, borderRadius: "50%", border: `1px solid ${COLORS.line}`, background: listening ? COLORS.ink : COLORS.bg, color: listening ? "#000000" : COLORS.ink, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", flexShrink: 0 }} aria-label="Hablar">
+      {selectedFiles.length > 0 && (
+        <div style={{ display: "flex", flexWrap: "wrap", gap: 6, padding: "8px 14px 0", background: COLORS.surface }}>
+          {selectedFiles.map((file, index) => (
+            <button key={`${file.name}-${index}`} onClick={() => setSelectedFiles((current) => current.filter((_, i) => i !== index))} style={{ display: "flex", alignItems: "center", gap: 6, border: `1px solid ${COLORS.line}`, background: COLORS.bg, color: COLORS.ink, borderRadius: 12, padding: "6px 9px", fontFamily: sansFont, fontSize: 11.5, cursor: "pointer" }} title="Quitar archivo">
+              {file.type.startsWith("image/") ? <Paperclip size={13} /> : <FileText size={13} />}
+              <span style={{ maxWidth: 160, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{file.name}</span> ×
+            </button>
+          ))}
+        </div>
+      )}
+      <div style={{ display: "flex", gap: 8, padding: "10px 14px calc(env(safe-area-inset-bottom, 0px) + 10px)", borderTop: selectedFiles.length ? "none" : `1px solid ${COLORS.line}`, background: COLORS.surface }}>
+        <input ref={fileInputRef} type="file" multiple accept="image/jpeg,image/png,image/gif,image/webp,application/pdf,text/plain,text/markdown,text/csv,application/json,text/html,application/xml" onChange={onFilesSelected} style={{ display: "none" }} />
+        <button onClick={() => fileInputRef.current?.click()} disabled={loading || uploading} style={{ width: 42, height: 42, borderRadius: "50%", border: `1px solid ${COLORS.line}`, background: COLORS.bg, color: COLORS.ink, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", flexShrink: 0, opacity: loading || uploading ? 0.4 : 1 }} aria-label="Adjuntar archivo">
+          <Paperclip size={17} />
+        </button>
+        <button onClick={toggleListen} disabled={loading || uploading} style={{ width: 42, height: 42, borderRadius: "50%", border: `1px solid ${COLORS.line}`, background: listening ? COLORS.ink : COLORS.bg, color: listening ? "#000000" : COLORS.ink, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", flexShrink: 0 }} aria-label="Hablar">
           {listening ? <MicOff size={17} /> : <Mic size={17} />}
         </button>
-        <input value={input} onChange={(e) => setInput(e.target.value)} onKeyDown={(e) => e.key === "Enter" && send(input)} placeholder="Escribe tu idea…"
+        <input value={input} onChange={(e) => setInput(e.target.value)} onKeyDown={(e) => e.key === "Enter" && send(input, selectedFiles)} placeholder={uploading ? "Subiendo archivo…" : "Escribe tu idea…"}
           style={{ flex: 1, border: `1px solid ${COLORS.line}`, borderRadius: 21, padding: "0 16px", fontFamily: sansFont, fontSize: 14, background: COLORS.surface, color: COLORS.ink }} />
-        <button onClick={() => send(input)} disabled={loading || !input.trim()} style={{ width: 42, height: 42, borderRadius: "50%", border: "none", background: COLORS.ink, color: "#000000", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", opacity: loading || !input.trim() ? 0.4 : 1, flexShrink: 0 }} aria-label="Enviar">
+        <button onClick={() => send(input, selectedFiles)} disabled={loading || uploading || (!input.trim() && !selectedFiles.length)} style={{ width: 42, height: 42, borderRadius: "50%", border: "none", background: COLORS.ink, color: "#000000", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", opacity: loading || uploading || (!input.trim() && !selectedFiles.length) ? 0.4 : 1, flexShrink: 0 }} aria-label="Enviar">
           <Send size={16} />
         </button>
       </div>

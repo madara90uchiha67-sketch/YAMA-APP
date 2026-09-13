@@ -2,6 +2,12 @@ const GEMINI_MODEL = process.env.GEMINI_MODEL || "gemini-3.6-flash";
 const configuredTimeout = Number(process.env.AI_TIMEOUT_MS || 30000);
 const AI_TIMEOUT_MS = Number.isFinite(configuredTimeout) && configuredTimeout > 0 ? configuredTimeout : 30000;
 
+export type AIMessage = {
+  role: string;
+  content: string;
+  attachments?: { mimeType: string; base64: string }[];
+};
+
 // Proveedores de respaldo, en orden de prioridad. Todos usan un formato
 // de API compatible con OpenAI, así que comparten la misma función.
 const FALLBACK_PROVIDERS = [
@@ -17,14 +23,19 @@ async function callGemini({
   maxTokens,
 }: {
   system: string;
-  messages: { role: string; content: string }[];
+  messages: AIMessage[];
   maxTokens: number;
 }) {
   if (!process.env.GEMINI_API_KEY) throw new Error("Gemini: falta la API key.");
 
   const contents = messages.map((m) => ({
     role: m.role === "assistant" ? "model" : "user",
-    parts: [{ text: m.content }],
+    parts: [
+      ...(m.attachments || []).map((attachment) => ({
+        inline_data: { mime_type: attachment.mimeType, data: attachment.base64 },
+      })),
+      ...(m.content ? [{ text: m.content }] : []),
+    ],
   }));
 
   const res = await fetch(
@@ -51,9 +62,10 @@ async function callGemini({
 
 async function callOpenAICompatible(
   provider: { name: string; url: string; key?: string; model: string },
-  { system, messages, maxTokens }: { system: string; messages: { role: string; content: string }[]; maxTokens: number }
+  { system, messages, maxTokens }: { system: string; messages: AIMessage[]; maxTokens: number }
 ) {
   if (!provider.key) throw new Error(`${provider.name}: falta la API key.`);
+  if (messages.some((message) => message.attachments?.length)) throw new Error(`${provider.name}: no admite adjuntos multimodales.`);
 
   const res = await fetch(provider.url, {
     method: "POST",
@@ -77,11 +89,14 @@ async function callOpenAICompatible(
 
 // --- Punto de entrada único: intenta Gemini, y si falla, prueba cada
 // respaldo en orden. El usuario nunca ve cuál proveedor respondió.
-export async function callAI(params: { system: string; messages: { role: string; content: string }[]; maxTokens: number }) {
-  const attempts: { name: string; fn: () => Promise<string> }[] = [
-    { name: "Gemini", fn: () => callGemini(params) },
-    ...FALLBACK_PROVIDERS.map((p) => ({ name: p.name, fn: () => callOpenAICompatible(p, params) })),
-  ];
+export async function callAI(params: { system: string; messages: AIMessage[]; maxTokens: number }) {
+  const hasAttachments = params.messages.some((message) => message.attachments?.length);
+  const attempts: { name: string; fn: () => Promise<string> }[] = hasAttachments
+    ? [{ name: "Gemini", fn: () => callGemini(params) }]
+    : [
+        { name: "Gemini", fn: () => callGemini(params) },
+        ...FALLBACK_PROVIDERS.map((p) => ({ name: p.name, fn: () => callOpenAICompatible(p, params) })),
+      ];
 
   const errors: string[] = [];
   for (const attempt of attempts) {

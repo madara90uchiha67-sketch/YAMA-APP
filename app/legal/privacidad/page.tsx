@@ -13,16 +13,17 @@ export default function PrivacyPage() {
       <ul>
         <li>Datos de registro: nombre y correo electrónico.</li>
         <li>Conversaciones que tienes con YAMA dentro de la app.</li>
+        <li>Archivos e imágenes que eliges adjuntar voluntariamente al chat.</li>
         <li>Preferencias que configuras (personalidad de YAMA, perfil de usuario, nivel de lenguaje).</li>
         <li>Notas de memoria generadas automáticamente a partir de tus conversaciones, para personalizar futuras respuestas.</li>
         <li>Información de pago, procesada directamente por nuestro proveedor de pagos (nunca almacenamos números de tarjeta en nuestros servidores).</li>
       </ul>
 
       <h2>3. Cómo usamos tus datos</h2>
-      <p>Usamos tus datos para: darte acceso a la app, personalizar las respuestas de YAMA según tu contexto, generar tu "Reto diario" y procesar tu suscripción.</p>
+      <p>Usamos tus datos para: darte acceso a la app, personalizar las respuestas de YAMA según tu contexto, analizar los archivos que adjuntas cuando lo solicitas, generar tu "Reto diario" y procesar tu suscripción.</p>
 
       <h2>4. Con quién compartimos tus datos</h2>
-      <p>Tus mensajes se procesan mediante el proveedor de inteligencia artificial configurado para generar las respuestas de YAMA. La aplicación intenta Gemini primero y puede usar un proveedor de respaldo habilitado por el operador. Tu información de pago es procesada por Stripe. No vendemos tus datos a terceros con fines publicitarios.</p>
+      <p>Tus mensajes y archivos adjuntos se procesan mediante el proveedor de inteligencia artificial configurado para generar las respuestas de YAMA. La aplicación usa Gemini para analizar imágenes y documentos; los adjuntos se almacenan en un bucket privado de Supabase Storage. Tu información de pago es procesada por Stripe. No vendemos tus datos a terceros con fines publicitarios.</p>
 
       <h2>5. Tus derechos</h2>
       <p>Puedes eliminar tu cuenta y todos tus datos asociados en cualquier momento desde la Configuración de la app, en la sección "Cuenta" → "Eliminar cuenta permanentemente". Esta acción es irreversible.</p>

@@ -16,6 +16,7 @@
     "react-dom": "^18.3.1",
     "next-auth": "^4.24.7",
     "@next-auth/prisma-adapter": "^1.0.7",
+    "@supabase/supabase-js": "^2.116.0",
     "@prisma/client": "^5.19.1",
     "bcryptjs": "^2.4.3",
     "stripe": "^16.9.0",
