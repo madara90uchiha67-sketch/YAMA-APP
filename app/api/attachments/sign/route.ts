@@ -67,11 +67,13 @@ export async function POST(req: Request) {
     }));
     return NextResponse.json({ uploads });
   } catch (error) {
-    console.error("YAMA AI — no se pudieron crear URLs de subida:", error);
+    const reason = error instanceof Error ? error.message : "Error desconocido";
+    console.error("YAMA AI — no se pudieron crear URLs de subida:", reason);
     await prisma.usageLog.updateMany({
       where: { userId, date, attachmentCount: { gte: normalized.length } },
       data: { attachmentCount: { decrement: normalized.length } },
     });
-    return NextResponse.json({ error: "No se pudo preparar la subida. Intenta de nuevo." }, { status: 502 });
+    const configurationError = reason.includes("SUPABASE_") || reason.includes("Storage no está configurado");
+    return NextResponse.json({ error: configurationError ? "El almacenamiento no está configurado en producción. Añade las variables de Supabase en Vercel y vuelve a desplegar." : "No se pudo preparar la subida. Intenta de nuevo." }, { status: configurationError ? 503 : 502 });
   }
 }

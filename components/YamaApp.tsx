@@ -702,7 +702,7 @@ function ChatView({ chatMode, plan, initialMessage, onInitialMessageSent, loadCo
       </div>
 
       {selectedFiles.length > 0 && (
-        <div style={{ display: "flex", flexWrap: "wrap", gap: 6, padding: "8px 14px 0", background: COLORS.surface }}>
+        <div style={{ display: "flex", flexWrap: "wrap", gap: 6, padding: "8px 14px 0", background: COLORS.surface, width: "100%", boxSizing: "border-box", overflow: "hidden" }}>
           {selectedFiles.map((file, index) => (
             <button key={`${file.name}-${index}`} onClick={() => setSelectedFiles((current) => current.filter((_, i) => i !== index))} style={{ display: "flex", alignItems: "center", gap: 6, border: `1px solid ${COLORS.line}`, background: COLORS.bg, color: COLORS.ink, borderRadius: 12, padding: "6px 9px", fontFamily: sansFont, fontSize: 11.5, cursor: "pointer" }} title="Quitar archivo">
               {file.type.startsWith("image/") ? <Paperclip size={13} /> : <FileText size={13} />}
@@ -711,17 +711,17 @@ function ChatView({ chatMode, plan, initialMessage, onInitialMessageSent, loadCo
           ))}
         </div>
       )}
-      <div style={{ display: "flex", gap: 8, padding: "10px 14px calc(env(safe-area-inset-bottom, 0px) + 10px)", borderTop: selectedFiles.length ? "none" : `1px solid ${COLORS.line}`, background: COLORS.surface }}>
+      <div style={{ display: "flex", alignItems: "center", gap: 8, width: "100%", minWidth: 0, boxSizing: "border-box", overflow: "hidden", padding: "10px 14px calc(env(safe-area-inset-bottom, 0px) + 10px)", borderTop: selectedFiles.length ? "none" : `1px solid ${COLORS.line}`, background: COLORS.surface }}>
         <input ref={fileInputRef} type="file" multiple accept="image/jpeg,image/png,image/gif,image/webp,application/pdf,text/plain,text/markdown,text/csv,application/json,text/html,application/xml" onChange={onFilesSelected} style={{ display: "none" }} />
-        <button onClick={() => fileInputRef.current?.click()} disabled={loading || uploading} style={{ width: 42, height: 42, borderRadius: "50%", border: `1px solid ${COLORS.line}`, background: COLORS.bg, color: COLORS.ink, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", flexShrink: 0, opacity: loading || uploading ? 0.4 : 1 }} aria-label="Adjuntar archivo">
+        <button onClick={() => fileInputRef.current?.click()} disabled={loading || uploading} style={{ width: 42, height: 42, minWidth: 42, flex: "0 0 42px", borderRadius: "50%", border: `1px solid ${COLORS.line}`, background: COLORS.bg, color: COLORS.ink, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", opacity: loading || uploading ? 0.4 : 1 }} aria-label="Adjuntar archivo">
           <Paperclip size={17} />
         </button>
-        <button onClick={toggleListen} disabled={loading || uploading} style={{ width: 42, height: 42, borderRadius: "50%", border: `1px solid ${COLORS.line}`, background: listening ? COLORS.ink : COLORS.bg, color: listening ? "#000000" : COLORS.ink, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", flexShrink: 0 }} aria-label="Hablar">
+        <button onClick={toggleListen} disabled={loading || uploading} style={{ width: 42, height: 42, minWidth: 42, flex: "0 0 42px", borderRadius: "50%", border: `1px solid ${COLORS.line}`, background: listening ? COLORS.ink : COLORS.bg, color: listening ? "#000000" : COLORS.ink, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer" }} aria-label="Hablar">
           {listening ? <MicOff size={17} /> : <Mic size={17} />}
         </button>
         <input value={input} onChange={(e) => setInput(e.target.value)} onKeyDown={(e) => e.key === "Enter" && send(input, selectedFiles)} placeholder={uploading ? "Subiendo archivo…" : "Escribe tu idea…"}
-          style={{ flex: 1, border: `1px solid ${COLORS.line}`, borderRadius: 21, padding: "0 16px", fontFamily: sansFont, fontSize: 14, background: COLORS.surface, color: COLORS.ink }} />
-        <button onClick={() => send(input, selectedFiles)} disabled={loading || uploading || (!input.trim() && !selectedFiles.length)} style={{ width: 42, height: 42, borderRadius: "50%", border: "none", background: COLORS.ink, color: "#000000", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", opacity: loading || uploading || (!input.trim() && !selectedFiles.length) ? 0.4 : 1, flexShrink: 0 }} aria-label="Enviar">
+          style={{ flex: "1 1 auto", minWidth: 0, width: 0, maxWidth: "100%", border: `1px solid ${COLORS.line}`, borderRadius: 21, padding: "0 16px", fontFamily: sansFont, fontSize: 14, background: COLORS.surface, color: COLORS.ink, boxSizing: "border-box" }} />
+        <button onClick={() => send(input, selectedFiles)} disabled={loading || uploading || (!input.trim() && !selectedFiles.length)} style={{ width: 42, height: 42, minWidth: 42, flex: "0 0 42px", borderRadius: "50%", border: "none", background: COLORS.ink, color: "#000000", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", opacity: loading || uploading || (!input.trim() && !selectedFiles.length) ? 0.4 : 1 }} aria-label="Enviar">
           <Send size={16} />
         </button>
       </div>

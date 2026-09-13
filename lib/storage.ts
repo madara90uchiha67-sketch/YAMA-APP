@@ -26,11 +26,11 @@ export type AttachmentRecord = {
 };
 
 function getAdminClient() {
-  const url = process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-  if (!url || !serviceRoleKey) {
-    throw new Error("Supabase Storage no está configurado.");
-  }
+  const url = (process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL || "").trim();
+  const serviceRoleKey = (process.env.SUPABASE_SERVICE_ROLE_KEY || "").trim();
+  if (!url) throw new Error("Falta SUPABASE_URL o NEXT_PUBLIC_SUPABASE_URL en el entorno del servidor.");
+  if (!serviceRoleKey) throw new Error("Falta SUPABASE_SERVICE_ROLE_KEY en el entorno del servidor.");
+  if (!/^https:\/\/[^\s/]+/.test(url)) throw new Error("SUPABASE_URL no tiene un formato válido.");
   return createClient(url, serviceRoleKey, {
     auth: { persistSession: false, autoRefreshToken: false },
   });

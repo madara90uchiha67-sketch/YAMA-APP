@@ -32,6 +32,12 @@ Para los adjuntos necesitas también `SUPABASE_URL`,
 `NEXT_PUBLIC_SUPABASE_ANON_KEY`. La clave `SUPABASE_SERVICE_ROLE_KEY` solo se
 usa en el servidor y nunca debe exponerse al navegador.
 
+En Vercel, configura las cuatro variables con el entorno **Production**
+seleccionado y vuelve a desplegar después de guardarlas. El endpoint de subida
+ahora devuelve un mensaje explícito si falta `SUPABASE_URL` o
+`SUPABASE_SERVICE_ROLE_KEY`; el navegador necesita además las dos variables
+con prefijo `NEXT_PUBLIC_` para completar la subida firmada.
+
 ```bash
 openssl rand -base64 32
 ```
