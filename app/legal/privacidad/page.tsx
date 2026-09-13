@@ -19,10 +19,10 @@ export default function PrivacyPage() {
       </ul>
 
       <h2>3. Cómo usamos tus datos</h2>
-      <p>Usamos tus datos para: darte acceso a la app, personalizar las respuestas de YAMA según tu contexto, generar tu "Reto diario", procesar tu suscripción, y mejorar el producto.</p>
+      <p>Usamos tus datos para: darte acceso a la app, personalizar las respuestas de YAMA según tu contexto, generar tu "Reto diario" y procesar tu suscripción.</p>
 
       <h2>4. Con quién compartimos tus datos</h2>
-      <p>Tus mensajes se procesan a través de la API de Google Gemini para generar las respuestas de YAMA. Tu información de pago es procesada por nuestro proveedor de pagos. No vendemos tus datos a terceros con fines publicitarios.</p>
+      <p>Tus mensajes se procesan mediante el proveedor de inteligencia artificial configurado para generar las respuestas de YAMA. La aplicación intenta Gemini primero y puede usar un proveedor de respaldo habilitado por el operador. Tu información de pago es procesada por Stripe. No vendemos tus datos a terceros con fines publicitarios.</p>
 
       <h2>5. Tus derechos</h2>
       <p>Puedes eliminar tu cuenta y todos tus datos asociados en cualquier momento desde la Configuración de la app, en la sección "Cuenta" → "Eliminar cuenta permanentemente". Esta acción es irreversible.</p>

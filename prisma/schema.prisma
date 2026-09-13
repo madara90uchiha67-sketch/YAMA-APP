@@ -78,6 +78,7 @@ model UsageLog {
   id           String   @id @default(cuid())
   date         String
   messageCount Int      @default(0)
+  strategistCount Int    @default(0)
   user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   userId       String
 

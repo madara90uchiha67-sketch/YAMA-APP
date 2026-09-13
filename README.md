@@ -4,10 +4,9 @@ Mismo diseño y experiencia de siempre, ahora con: backend seguro, cuentas de
 usuario, base de datos, memoria en la nube, planes Free/Pro y pagos con
 Stripe. Lista para Vercel.
 
-⚠️ **Aviso honesto:** este proyecto no se compiló ni se probó en un entorno
-real (el asistente que lo generó no tiene acceso a internet). Sigue esta
-guía paso a paso — es muy probable que funcione, pero pueden aparecer
-errores menores de dependencias que hay que resolver en tu máquina.
+El proyecto se valida con `npm run build`. Antes de publicar, configura las
+variables de entorno, aplica el esquema de Prisma y prueba el webhook de
+Stripe en modo de prueba.
 
 ---
 
@@ -24,8 +23,9 @@ errores menores de dependencias que hay que resolver en tu máquina.
 cp .env.example .env
 ```
 
-Completa cada valor (ver comentarios en el archivo). Para
-`NEXTAUTH_SECRET` genera uno con:
+Completa cada valor (ver comentarios en el archivo). Necesitas al menos una
+clave de IA (`GEMINI_API_KEY`, `GROQ_API_KEY`, `CEREBRAS_API_KEY`,
+`OPENROUTER_API_KEY` o `MISTRAL_API_KEY`). Para `NEXTAUTH_SECRET` genera uno con:
 
 ```bash
 openssl rand -base64 32
@@ -47,9 +47,9 @@ base de datos de Supabase.
 npm run dev
 ```
 
-Abre http://localhost:3000, crea una cuenta y prueba el chat (necesitas
-tu `ANTHROPIC_API_KEY` configurada — créala en
-https://console.anthropic.com).
+Abre http://localhost:3000, crea una cuenta y prueba el chat. YAMA intenta
+Gemini primero y usa los proveedores de respaldo configurados si el primero
+no está disponible.
 
 ## 5. Stripe (pagos de la versión Pro)
 
@@ -61,7 +61,8 @@ https://console.anthropic.com).
    `https://tu-dominio.vercel.app/api/billing/webhook` → eventos:
    `checkout.session.completed`, `customer.subscription.updated`,
    `customer.subscription.created`, `customer.subscription.deleted` →
-   copia el "Signing secret" → `STRIPE_WEBHOOK_SECRET`
+   copia el "Signing secret" → `STRIPE_WEBHOOK_SECRET`. El botón de Pro de la
+   aplicación usa este flujo de Stripe; no hace falta configurar Paddle.
 
 ## 6. Desplegar en Vercel
 
@@ -70,8 +71,8 @@ https://console.anthropic.com).
 3. En "Environment Variables" pega TODAS las variables del `.env`
 4. Deploy
 
-Si el build falla, la causa casi siempre es una variable de entorno
-faltante (revisa el log de Vercel, dice cuál).
+Si el build falla, revisa el log de Vercel y ejecuta primero `npm run build`
+en local. Las variables de entorno se validan al usar cada integración.
 
 ## 7. Íconos de la PWA
 
@@ -79,8 +80,8 @@ Coloca tus propios íconos en:
 - `public/icons/icon-192.png` (192×192)
 - `public/icons/icon-512.png` (512×512)
 
-(Aún no están incluidos — sin ellos la instalación como PWA funciona pero
-sin ícono personalizado.)
+Los iconos ya están incluidos en el repositorio. Puedes reemplazarlos por
+versiones de tu marca manteniendo esos nombres y tamaños.
 
 ## 8. Instalar como app (PWA)
 

@@ -437,6 +437,7 @@ function ChatView({ chatMode, plan, initialMessage, onInitialMessageSent, loadCo
   const [speakOn, setSpeakOn] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
   const recognitionRef = useRef<any>(null);
+  const initialMessageRef = useRef<string | null>(null);
 
   useEffect(() => { scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" }); }, [messages, loading]);
 
@@ -450,7 +451,7 @@ function ChatView({ chatMode, plan, initialMessage, onInitialMessageSent, loadCo
 
   const send = useCallback(async (text: string) => {
     const content = text.trim();
-    if (!content) return;
+    if (!content || loading) return;
     setMessages((m) => [...m, { role: "user", content }]);
     setInput(""); setLoading(true); setError("");
     try {
@@ -474,10 +475,15 @@ function ChatView({ chatMode, plan, initialMessage, onInitialMessageSent, loadCo
     } finally {
       setLoading(false);
     }
-  }, [conversationId, chatMode, speak]);
+  }, [conversationId, chatMode, loading, speak]);
 
   useEffect(() => {
-    if (initialMessage) {
+    if (!initialMessage) {
+      initialMessageRef.current = null;
+      return;
+    }
+    if (initialMessageRef.current !== initialMessage) {
+      initialMessageRef.current = initialMessage;
       send(initialMessage);
       onInitialMessageSent?.();
     }
@@ -811,18 +817,8 @@ function PanelView({ memory, refreshMemory, plan, onUpgrade, onDeleteAccount, on
 
 /* ---------------- ROOT ---------------- */
 export default function YamaApp() {
-  const { data: session, status } = useSession();
+  const { status } = useSession();
   const router = useRouter();
-  useEffect(() => {
-    if ((window as any).Paddle) return;
-    const script = document.createElement("script");
-    script.src = "https://cdn.paddle.com/paddle/v2/paddle.js";
-    script.onload = () => {
-      (window as any).Paddle.Environment.set("sandbox");
-      (window as any).Paddle.Initialize({ token: process.env.NEXT_PUBLIC_PADDLE_TOKEN });
-    };
-    document.body.appendChild(script);
-  }, []);
   const [view, setView] = useState("home");
   const [chatMode, setChatMode] = useState("free");
   const [memory, setMemory] = useState<any>(null);
@@ -842,17 +838,17 @@ export default function YamaApp() {
 
   useEffect(() => { if (status === "authenticated") refreshMemory(); }, [status, refreshMemory]);
 
-  const upgrade = () => {
-    const paddle = (window as any).Paddle;
-    if (!paddle) {
-      alert("El sistema de pagos todavía está cargando, intenta de nuevo en un segundo.");
-      return;
+  const upgrade = async () => {
+    try {
+      const res = await fetch("/api/billing/checkout", { method: "POST" });
+      const data = await res.json();
+      if (!res.ok || !data.url) {
+        throw new Error(data.error || "No se pudo iniciar el pago.");
+      }
+      window.location.assign(data.url);
+    } catch (error) {
+      alert(error instanceof Error ? error.message : "No se pudo iniciar el pago. Intenta de nuevo.");
     }
-    paddle.Checkout.open({
-      items: [{ priceId: process.env.NEXT_PUBLIC_PADDLE_PRICE_ID, quantity: 1 }],
-      customer: { email: session?.user?.email || undefined },
-      customData: { userId: (session?.user as any)?.id },
-    });
   };
 
   const deleteAccount = async () => {

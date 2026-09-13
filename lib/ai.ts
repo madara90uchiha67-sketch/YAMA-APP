@@ -1,4 +1,6 @@
-const GEMINI_MODEL = "gemini-3.6-flash";
+const GEMINI_MODEL = process.env.GEMINI_MODEL || "gemini-3.6-flash";
+const configuredTimeout = Number(process.env.AI_TIMEOUT_MS || 30000);
+const AI_TIMEOUT_MS = Number.isFinite(configuredTimeout) && configuredTimeout > 0 ? configuredTimeout : 30000;
 
 // Proveedores de respaldo, en orden de prioridad. Todos usan un formato
 // de API compatible con OpenAI, así que comparten la misma función.
@@ -18,6 +20,8 @@ async function callGemini({
   messages: { role: string; content: string }[];
   maxTokens: number;
 }) {
+  if (!process.env.GEMINI_API_KEY) throw new Error("Gemini: falta la API key.");
+
   const contents = messages.map((m) => ({
     role: m.role === "assistant" ? "model" : "user",
     parts: [{ text: m.content }],
@@ -28,6 +32,7 @@ async function callGemini({
     {
       method: "POST",
       headers: { "Content-Type": "application/json" },
+      signal: AbortSignal.timeout(AI_TIMEOUT_MS),
       body: JSON.stringify({
         system_instruction: { parts: [{ text: system }] },
         contents,
@@ -53,6 +58,7 @@ async function callOpenAICompatible(
   const res = await fetch(provider.url, {
     method: "POST",
     headers: { "Content-Type": "application/json", Authorization: `Bearer ${provider.key}` },
+    signal: AbortSignal.timeout(AI_TIMEOUT_MS),
     body: JSON.stringify({
       model: provider.model,
       messages: [{ role: "system", content: system }, ...messages],
