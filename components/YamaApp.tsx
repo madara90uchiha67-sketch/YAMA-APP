@@ -620,7 +620,7 @@ function ChatView({ chatMode, plan, initialMessage, onInitialMessageSent, loadCo
       </div>
 
       {(micError || error) && (
-        <div style={{ margin: "10px 18px 0", padding: "9px 12px", borderRadius: 10, background: "#3A1F1A", color: "#FF9E86", fontFamily: sansFont, fontSize: 12.5 }}>{micError || error}</div>
+        <div role="alert" aria-live="polite" style={{ margin: "10px 18px 0", padding: "9px 12px", borderRadius: 10, background: "#3A1F1A", color: "#FF9E86", fontFamily: sansFont, fontSize: 12.5 }}>{micError || error}</div>
       )}
 
       <div ref={scrollRef} style={{ flex: 1, overflowY: "auto", padding: "16px 18px", display: "flex", flexDirection: "column", gap: 12 }}>
@@ -807,7 +807,7 @@ function PanelView({ memory, refreshMemory, plan, onUpgrade, onDeleteAccount, on
             <Crown size={14} /> Mejorar a Pro — más mensajes y memoria
           </button>
         )}
-        {notice && <div style={{ color: "#FF9E86", fontSize: 12.5, marginBottom: 10 }}>{notice}</div>}
+        {notice && <div role="status" aria-live="polite" style={{ color: "#FF9E86", fontSize: 12.5, marginBottom: 10 }}>{notice}</div>}
 
         <div style={{ background: COLORS.surface, border: `1px solid ${COLORS.line}`, borderRadius: 16, padding: 16, marginBottom: 12 }}>
           <div style={{ fontFamily: serifFont, fontSize: 15, marginBottom: 10, color: COLORS.ink }}>Personalidad de YAMA</div>
