@@ -822,7 +822,7 @@ function PanelView({ memory, refreshMemory, plan, onUpgrade, onDeleteAccount, on
           </div>
           <div style={{ fontSize: 11, color: COLORS.muted, marginBottom: 6 }}>Forma de hablar</div>
           <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginBottom: 12 }}>
-            {[["formal", "Formal"], ["casual", "Casual"], ["personalizada", "Personalizada"]].map(([val, label]) => (
+            {[['formal', 'Formal'], ['casual', 'Casual']].map(([val, label]) => (
               <button key={val} onClick={() => { setSpeakingStyle(val); patchSettings({ speakingStyle: val }); }}
                 style={{ border: `1px solid ${speakingStyle === val ? COLORS.ink : COLORS.line}`, background: speakingStyle === val ? COLORS.ink : COLORS.surface, color: speakingStyle === val ? "#000000" : COLORS.ink, borderRadius: 16, padding: "6px 12px", fontSize: 12, cursor: "pointer" }}>
                 {label}
@@ -831,8 +831,8 @@ function PanelView({ memory, refreshMemory, plan, onUpgrade, onDeleteAccount, on
           </div>
           <div style={{ fontSize: 11, color: COLORS.muted, marginBottom: 6 }}>¿Para qué usas YAMA?</div>
           <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
-            {[["creador", "Creador de contenido"], ["emprendedor", "Emprendedor"], ["marca", "Dueño de marca"], ["freelancer", "Freelancer"], ["estudiante", "Estudiante"]].map(([val, label]) => (
-              <button key={val} onClick={() => { setUserProfile(val); patchSettings({ userProfile: val }); }}
+            {[['creador', 'Creador de contenido'], ['emprendedor', 'Emprendedor'], ['marca', 'Dueño de marca'], ['freelancer', 'Freelancer'], ['estudiante', 'Estudiante']].map(([val, label]) => (
+              <button key={val} onClick={() => { setUserProfile(val); patchSettings({ userProfile: val }); if (val === "estudiante") window.alert("JAJAJAJA VETE A CHATGPT AQUI SOLO EXITO"); }}
                 style={{ border: `1px solid ${userProfile === val ? COLORS.ink : COLORS.line}`, background: userProfile === val ? COLORS.ink : COLORS.surface, color: userProfile === val ? "#000000" : COLORS.ink, borderRadius: 16, padding: "6px 12px", fontSize: 12, cursor: "pointer" }}>
                 {label}
               </button>
