@@ -65,7 +65,7 @@ export default function SplashScreen({ onFinish }: SplashScreenProps) {
       >
         <video
           ref={videoRef}
-          src="/lv_0_20260907220958.mp4"
+          src="/1789392725096.mp4"
           playsInline
           preload="auto"
           onLoadedData={handleVideoReady}
